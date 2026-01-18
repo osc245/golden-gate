@@ -6,6 +6,27 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+function formatMarkdown(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(<strong key={match.index}>{match[1]}</strong>);
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
+
 type Mode = "golden" | "tower";
 
 interface ChatInterfaceProps {
@@ -122,7 +143,7 @@ export function ChatInterface({ mode }: ChatInterfaceProps) {
         )}>
           <CardContent className="pt-0">
             <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed text-lg">
-              {response || (loading && "Thinking...")}
+              {response ? formatMarkdown(response) : (loading && "Thinking...")}
             </p>
           </CardContent>
         </Card>
