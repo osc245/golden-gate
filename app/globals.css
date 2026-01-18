@@ -123,3 +123,68 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fog animations */
+@keyframes fog-drift-1 {
+  0% {
+    transform: translateX(-25%);
+  }
+  100% {
+    transform: translateX(25%);
+  }
+}
+
+@keyframes fog-drift-2 {
+  0% {
+    transform: translateX(25%);
+  }
+  100% {
+    transform: translateX(-25%);
+  }
+}
+
+@keyframes fog-drift-3 {
+  0% {
+    transform: translateX(-15%);
+  }
+  100% {
+    transform: translateX(15%);
+  }
+}
+
+.animate-fog-1 {
+  animation: fog-drift-1 20s ease-in-out infinite alternate;
+}
+
+.animate-fog-2 {
+  animation: fog-drift-2 15s ease-in-out infinite alternate;
+}
+
+.animate-fog-3 {
+  animation: fog-drift-3 12s ease-in-out infinite alternate;
+}
+
+/* Rain animation */
+@keyframes rain-fall {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(calc(100vh + 20px));
+  }
+}
+
+.rain-drop {
+  position: absolute;
+  top: -20px;
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(174, 194, 224, 0.5),
+    rgba(174, 194, 224, 0.8)
+  );
+  animation: rain-fall linear infinite;
+  border-radius: 0 0 5px 5px;
+}
