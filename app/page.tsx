@@ -24,7 +24,7 @@ export default function Home() {
             "text-5xl font-bold tracking-tight transition-colors",
             isGolden ? "text-orange-600 dark:text-orange-400" : "text-blue-600 dark:text-blue-400"
           )}>
-            Golden Gate Claude
+            {isGolden ? "Golden Gate Claude" : "Tower Bridge Claude"}
           </h1>
           <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
             Choose your mode and start chatting

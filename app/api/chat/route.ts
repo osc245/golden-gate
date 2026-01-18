@@ -1,9 +1,8 @@
-import { Anthropic } from '@anthropic-ai/sdk';
-import { NextRequest, NextResponse } from 'next/server';
+import { anthropic } from '@ai-sdk/anthropic';
+import { streamText } from 'ai';
+import { NextRequest } from 'next/server';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+export const dynamic = 'force-dynamic';
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 
@@ -17,14 +16,14 @@ export async function POST(request: NextRequest) {
     const { mode, message } = await request.json();
 
     if (!mode || !['golden', 'tower'].includes(mode)) {
-      return NextResponse.json(
+      return Response.json(
         { error: 'Invalid mode. Must be "golden" or "tower"' },
         { status: 400 }
       );
     }
 
     if (!message || typeof message !== 'string') {
-      return NextResponse.json(
+      return Response.json(
         { error: 'Message is required and must be a string' },
         { status: 400 }
       );
@@ -32,9 +31,8 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = MODE_PROMPTS[mode];
 
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 1024,
+    const result = streamText({
+      model: anthropic(MODEL),
       system: systemPrompt,
       messages: [
         {
@@ -44,18 +42,31 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      return NextResponse.json(
-        { error: 'Unexpected response type from Claude API' },
-        { status: 500 }
-      );
-    }
+    // Use the text stream directly
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const textPart of result.textStream) {
+            controller.enqueue(encoder.encode(textPart));
+          }
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
 
-    return NextResponse.json({ response: content.text });
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('Error calling Claude API:', error);
-    return NextResponse.json(
+    return Response.json(
       { error: 'Failed to get response from Claude API' },
       { status: 500 }
     );

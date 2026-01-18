@@ -41,15 +41,32 @@ export function ChatInterface({ mode }: ChatInterfaceProps) {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to get response");
+        const errorData = await res.json().catch(() => ({ error: "Failed to get response" }));
+        throw new Error(errorData.error || "Failed to get response");
       }
 
-      const data = await res.json();
-      setResponse(data.response);
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      let fullText = "";
+
+      // Read the stream and accumulate text directly
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        setResponse(fullText);
+      }
+
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
       setLoading(false);
     }
   };
@@ -96,36 +113,16 @@ export function ChatInterface({ mode }: ChatInterfaceProps) {
         </Card>
       )}
 
-      {response && (
+      {(response !== null || loading) && (
         <Card className={cn(
           "border-2 shadow-xl transition-colors",
           isGolden 
             ? "border-orange-200 dark:border-orange-800" 
             : "border-blue-200 dark:border-blue-800"
         )}>
-          <CardContent className="pt-6">
+          <CardContent className="pt-0">
             <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed text-lg">
-              {response}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {loading && (
-        <Card className={cn(
-          "border-2 shadow-lg transition-colors",
-          isGolden 
-            ? "border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20" 
-            : "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20"
-        )}>
-          <CardContent className="pt-6">
-            <p className={cn(
-              "text-lg font-medium",
-              isGolden 
-                ? "text-orange-700 dark:text-orange-400" 
-                : "text-blue-700 dark:text-blue-400"
-            )}>
-              Thinking...
+              {response || (loading && "Thinking...")}
             </p>
           </CardContent>
         </Card>
